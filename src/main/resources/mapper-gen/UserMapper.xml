@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.school.demo.mapper.UserMapper">
+    <!-- SO 部分开始 -->
+    <select id="listIdBySo" resultType="long">
+        select id from user_tb
+        <include refid="soSqlFilter"/>
+    </select>
+
+    <select id="countBySo" resultType="int">
+        select count(1) from user_tb
+        <include refid="soSqlFilter"/>
+    </select>
+
+    <select id="statBySo" resultType="com.best.transport.base.StatInfo">
+        select count(1) count, min(id) min_id, max(id) max_id from user_tb
+        <include refid="soSqlFilter"/>
+    </select>
+
+    <sql id="soSqlFilter">
+        <where>
+            <include refid="soSqlFilterRef"/>
+            <if test="id !=null ">
+                <!-- 1 -->and id = #{id}
+            </if>
+            <if test="minId != null and maxId != null">
+                and id between #{minId} and #{maxId}
+            </if>
+            <if test="idList != null and idList.size() > 0">
+                and id in
+                <foreach collection="idList" index="dex" item="item" open="("
+                         close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="inIdList !=null and inIdList.size() > 0 ">
+                and id in
+                <foreach collection="inIdList" index="dex" item="item" open="("
+                         close=")" separator=",">
+                #{item}
+                </foreach>
+            </if>
+            <if test="name != null">
+                and name = #{name}
+            </if>
+            <if test="likeName != null">
+                and name like #{likeName}
+            </if>
+        </where>
+    </sql>
+    <!-- SO 部分结束 -->
+    <!-- BO 部分开始 -->
+    <!-- CRUD begin -->
+    <insert id="insert">
+        <selectKey keyProperty="id" resultType="long" order="BEFORE">
+            select .nextval from dual
+        </selectKey>
+        insert into user_tb(
+        <!-- 1 -->id,
+        <!-- 2 -->create_time,
+        <!-- 3 -->creator_id,
+        <!-- 4 -->creator,
+        <!-- 10 -->id,
+        <!-- 11 -->name,
+        <!-- 12 -->pass
+        )
+        values(
+        <!-- 1 -->#{id:NUMERIC},
+        <!-- 2 -->#{createTime:TIMESTAMP},
+        <!-- 3 -->#{creatorId:NUMERIC},
+        <!-- 4 -->#{creator:VARCHAR},
+        <!-- 10 -->#{id:NUMERIC},
+        <!-- 11 -->#{name:VARCHAR},
+        <!-- 12 -->#{pass:VARCHAR}
+        )
+    </insert>
+
+    <insert id="batchInsert">
+        insert into user_tb(
+        <!-- 1 -->id,
+        <!-- 2 -->create_time,
+        <!-- 3 -->creator_id,
+        <!-- 4 -->creator,
+        <!-- 10 -->id,
+        <!-- 11 -->name,
+        <!-- 12 -->pass
+        )
+        SELECT .nextval,A.* FROM (
+        <foreach collection="list" item="item" index="index" separator="union all">
+            SELECT
+            <!-- 1 -->#{id:NUMERIC},
+            <!-- 2 -->#{createTime:TIMESTAMP},
+            <!-- 3 -->#{creatorId:NUMERIC},
+            <!-- 4 -->#{creator:VARCHAR},
+            <!-- 10 -->#{id:NUMERIC},
+            <!-- 11 -->#{name:VARCHAR},
+            <!-- 12 -->#{pass:VARCHAR}
+            FROM DUAL
+        </foreach>
+        ) A
+    </insert>
+
+    <update id="update">
+        update user_tb
+        <include refid="updateSetSql"/>
+        where id=#{id} and lock_version=#{lockVersion}
+    </update>
+
+    <sql id="updateSetSql">
+        <set>
+            <if test="updateTime !=null ">
+                <!-- 1 -->update_time=#{updateTime},
+            </if>
+            <if test="updaterId !=null ">
+                <!-- 2 -->updater_id=#{updaterId},
+            </if>
+            <if test="updater!=null and updater!='' ">
+                <!-- 3 -->updater=#{updater},
+            </if>
+            <!-- 4 -->lock_version=#{lockVersion} + 1,
+            <if test="id != null">
+                <!-- 5 -->id = #{id},
+            </if>
+            <if test="name != null">
+                <!-- 6 -->name = #{name},
+            </if>
+            <if test="pass != null">
+                <!-- 7 -->pass = #{pass},
+            </if>
+        </set>
+    </sql>
+
+    <delete id="delete">
+        delete from user_tb where id = #{id}
+    </delete>
+
+    <delete id="deleteByIdList">
+        delete from user_tb where id in
+        <foreach collection="list" index="dex" item="item" open="("
+                 close=")" separator=",">
+            #{item}
+        </foreach>
+    </delete>
+
+    <sql id="boSelectList">
+        id,
+        create_time,
+        creator_id,
+        creator,
+        id,
+        name,
+        pass    </sql>
+
+    <select id="findBo" resultType="com.school.demo.bo.UserBo">
+        select
+        <include refid="boSelectList"/>
+        from user_tb
+        where
+        id = #{id}
+    </select>
+
+    <select id="listBoBySo" resultType="com.school.demo.bo.UserBo">
+        select
+        <include refid="boSelectList"/>
+        from user_tb
+        <include refid="soSqlFilter"/>
+        order by id desc
+    </select>
+
+    <select id="listBoByIdList" resultType="com.school.demo.bo.UserBo">
+        select
+        <include refid="boSelectList"/>
+        from user_tb
+        where id in
+        <foreach collection="list" index="dex" item="item" open="("
+                 close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+    <!-- BO 部分结束 -->
+    <!-- VO 部分开始 -->
+    <sql id="voSelectList">
+        id,
+        create_time,
+        creator_id,
+        creator,
+        id,
+        name,
+        pass
+    </sql>
+    <select id="findVo" resultType="com.school.demo.vo.UserVo">
+        select
+        <include refid="voSelectList"/>
+        from user_tb where
+        id = #{id}
+    </select>
+
+    <select id="listVoBySo" resultType="com.school.demo.vo.UserVo">
+        select
+        <include refid="voSelectList"/>
+        from user_tb
+        <include refid="soSqlFilter"/>
+        order by id desc
+    </select>
+
+    <select id="listVoByIdList" resultType="com.school.demo.vo.UserVo">
+        select
+        <include refid="voSelectList"/>
+        from user_tb
+        where id in
+        <foreach collection="list" index="dex" item="item" open="("
+                 close=")" separator=",">
+            #{item}
+        </foreach>
+    </select>
+    <!-- VO 部分结束 -->
+    <!-- CRUD end -->
+
+    <sql id="soSqlFilterRef">
+<!-- === biz code [soFilter] start === -->
+
+<!-- === biz code [soFilter] end === -->
+    </sql>
+<!-- === biz code [bizXml] start === -->
+
+<!-- === biz code [bizXml] end === -->
+</mapper>
